@@ -1,0 +1,119 @@
+{
+  "project_info": {
+    "project_number": "528720101330",
+    "firebase_url": "https://berrymaster-c0093-default-rtdb.firebaseio.com",
+    "project_id": "berrymaster-c0093",
+    "storage_bucket": "berrymaster-c0093.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528720101330:android:286def17b8971b2e2ed20b",
+        "android_client_info": {
+          "package_name": "com.bbp.blue_field_barcode"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIxI_VHrNKpzKrbgF4WL6kaNf35ahs8PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528720101330-8osvr1ggg89uknmq2a83bmt7342pd144.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bbp.blueweb.blueWeb"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528720101330:android:937ac9a78c8d19812ed20b",
+        "android_client_info": {
+          "package_name": "com.bbp.bluelab_fq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIxI_VHrNKpzKrbgF4WL6kaNf35ahs8PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528720101330-8osvr1ggg89uknmq2a83bmt7342pd144.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bbp.blueweb.blueWeb"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528720101330:android:0776c331ca69340d2ed20b",
+        "android_client_info": {
+          "package_name": "com.bbp.blueweb.blue_web"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIxI_VHrNKpzKrbgF4WL6kaNf35ahs8PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528720101330-cqoeij53r8jkvoal65ctckjrmgr0v594.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528720101330-8osvr1ggg89uknmq2a83bmt7342pd144.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bbp.blueweb.blueWeb"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
