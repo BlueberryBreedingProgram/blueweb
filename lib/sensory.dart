@@ -209,8 +209,7 @@ class _SensoryPageState extends State<SensoryPage> {
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              primary: Colors.green, 
-              onPrimary: Colors.white, 
+              foregroundColor: Colors.white, backgroundColor: Colors.green,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             onPressed: () {

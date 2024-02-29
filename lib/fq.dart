@@ -4,6 +4,7 @@ import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:excel/excel.dart';
+import 'barcode.dart';
 import 'navigation_controller.dart';
 import 'navigation_rail_widget.dart';
 import 'range.dart';
@@ -573,6 +574,17 @@ class _FruitQualityState extends State<FruitQuality> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton( // Add this section for the FAB
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => BarcodePage()), // Make sure NewPage is defined in your app
+          );
+        },
+        child: Icon(Icons.qr_code_scanner),
+        backgroundColor: Colors.blue,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Positions the FAB
     );
   }
 }

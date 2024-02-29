@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'barcode.dart';
 import 'firebase_options.dart';
 import 'dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,21 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'BlueWeb',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        //primarySwatch: Colors.blue[200,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.blue.shade200),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.blue.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.blue.shade200),
+          ),
+          labelStyle: TextStyle(color: Colors.blue.shade200),
+        ),
+      ),
       home: FutureBuilder(
         future: _initialization,
         builder: (context, snapshot) {
@@ -60,10 +76,10 @@ class LoginScreen extends StatelessWidget {
                     fillColor: Colors.grey[400], 
                     filled: true, 
                     labelText: 'UFL Email',
-                    labelStyle: TextStyle(color: Colors.white), 
+                    labelStyle: TextStyle(color: Colors.blue[200]),
                     border: OutlineInputBorder(),
                   ),
-                  style: TextStyle(color: Colors.white), 
+                  style: TextStyle(color: Colors.blue[200]),
                 ),
               ),
               SizedBox(height: 10),
@@ -76,10 +92,10 @@ class LoginScreen extends StatelessWidget {
                     fillColor: Colors.grey[400], 
                     filled: true, 
                     labelText: 'Password',
-                    labelStyle: TextStyle(color: Colors.white), 
+                    labelStyle: TextStyle(color: Colors.blue[200]),
                     border: OutlineInputBorder(),
                   ),
-                  style: TextStyle(color: Colors.white), 
+                  style: TextStyle(color: Colors.blue[200]),
                   obscureText: true,
                 ),
               ),
@@ -97,6 +113,19 @@ class LoginScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Navigate to the Barcode Input Webapp screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => BarcodePage()), // Adjust based on your actual screen/widget name
+          );
+        },
+        icon: Icon(Icons.qr_code),
+        label: Text('Barcode Input Webapp'),
+        backgroundColor: Colors.green[50],
       ),
     );
   }
