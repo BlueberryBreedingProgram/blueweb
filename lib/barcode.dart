@@ -15,8 +15,6 @@ class _BarcodePageState extends State<BarcodePage> {
   final TextEditingController _massController = TextEditingController();
   final TextEditingController _numOfBerriesController = TextEditingController();
   final TextEditingController _xBerryMassController = TextEditingController();
-  final FocusNode _barcodeFocusNode = FocusNode();
-  final FocusNode _genotypeFocusNode = FocusNode();
   String? _selectedSite;
   List<String> _siteOptions = [];
   String? _selectedStage;
@@ -26,29 +24,37 @@ class _BarcodePageState extends State<BarcodePage> {
   String? _selectedProject;
   List<String> _projectOptions = [];
   String? _selectedPostHarvest;
+  String? _bush;
+  final FocusNode _barcodeFocusNode = FocusNode();
+  final FocusNode _genotypeFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _barcodeController.addListener(_onBarcodeChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_barcodeFocusNode);
-    });
     _fetchSiteOptions();
     _fetchStageOptions();
     _fetchBlockOptions();
     _fetchProjectOptions();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_barcodeFocusNode);
+    });
   }
 
   String _getCurrentYear() {
-    return DateTime.now().year.toString();
+    return DateTime
+        .now()
+        .year
+        .toString();
   }
 
   void _onBarcodeChange() async {
     if (_barcodeController.text.length == 7) {
       final barcode = _barcodeController.text;
       final year = _getCurrentYear();
-      final dataSnapshot = await _dbRef.child('fruit_quality_$year/$barcode').get();
+      final dataSnapshot = await _dbRef.child('fruit_quality_$year/$barcode')
+          .get();
 
       // Trigger UI update to show rest of the form fields regardless of data availability.
       setState(() {
@@ -82,11 +88,15 @@ class _BarcodePageState extends State<BarcodePage> {
           if (!_projectOptions.contains(_selectedProject)) {
             _projectOptions.add(_selectedProject!); // Temporarily add option
           }
+          _selectedPostHarvest = data['postHarvest'] ?? '';
+          _bush = data['bush'] ?? '';
         });
       } else {
-        // No matching data found, ensure the form is ready for manual input
-        print("No data found for barcode: $barcode");
-        // Optionally, move focus to the next logical field (e.g., Genotype)
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (this.mounted) {
+            FocusScope.of(context).requestFocus(_genotypeFocusNode);
+          }
+        });
       }
     } else {
       // If less than 7 digits are entered, consider resetting form or handling as needed
@@ -154,7 +164,99 @@ class _BarcodePageState extends State<BarcodePage> {
     _barcodeController.removeListener(_onBarcodeChange);
     _barcodeController.dispose();
     _barcodeFocusNode.dispose();
+    _genotypeFocusNode.dispose();
     super.dispose();
+  }
+
+  String getCurrentTimestamp() {
+    final now = DateTime.now();
+    return now.toIso8601String(); // This returns a string in the format "2024-01-18T15:40:47.469Z"
+  }
+
+  int getWeekOfYear(DateTime date) {
+    final startOfYear = DateTime(date.year, 1, 1, 0, 0);
+    final firstMonday = startOfYear.weekday;
+    final daysInFirstWeek = 8 - firstMonday;
+    final diff = date.difference(startOfYear);
+    var days = diff.inDays - daysInFirstWeek;
+    var weeks = ((days / 7).ceil());
+    if (daysInFirstWeek > 3) {
+      weeks += 1;
+    }
+    return weeks;
+  }
+
+  void _updateDatabaseEntry() async {
+    if (_barcodeController.text.isEmpty || _barcodeController.text.length != 7 ||
+        _genotypeController.text.trim().isEmpty ||
+        _selectedStage == null || _selectedStage!.trim().isEmpty ||
+        _selectedSite == null || _selectedSite!.trim().isEmpty) {
+      // Show a Snackbar with an error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Barcode, Genotype, Stage, and Site are required.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Exit the function to prevent the update
+    }
+
+    final String barcode = _barcodeController.text;
+    final String year = _getCurrentYear();
+    final DateTime now = DateTime.now();
+    final int currentWeek = getWeekOfYear(now);
+    final String currentTimestamp = getCurrentTimestamp();
+    if (barcode.isEmpty || barcode.length != 7) {
+      // Handle error: Show an alert dialog or a Snackbar to inform the user.
+      return;
+    }
+
+    // Prepare the data to be updated.
+    Map<String, dynamic> dataToUpdate = {
+      'dummyCode': _barcodeController.text,
+      'genotype': _genotypeController.text,
+      'stage': _selectedStage,
+      'site': _selectedSite,
+      'block': _selectedBlock,
+      'project': _selectedProject,
+      'postHarvest': _selectedPostHarvest,
+      'bush': _bush,
+      'notes': _notesController.text,
+      'mass': _massController.text,
+      'numOfBerries': _numOfBerriesController.text,
+      'xBerryMass': _xBerryMassController.text,
+      'dateAndTime': currentTimestamp,
+      'week': currentWeek,
+    };
+
+    // Update the database entry.
+    await _dbRef.child('fruit_quality_$year/$barcode').update(dataToUpdate).then((_) {
+      setState(() {
+        _barcodeController.clear();
+        _genotypeController.clear();
+        _massController.clear();
+        _numOfBerriesController.clear();
+        _xBerryMassController.clear();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FocusScope.of(context).requestFocus(_barcodeFocusNode);
+        });
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Data successfully updated."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    });
   }
 
   void _showSettingsDialog(BuildContext initialContext) async {
@@ -170,13 +272,13 @@ class _BarcodePageState extends State<BarcodePage> {
       builder: (dialogContext) {
         // Use 'dialogContext' for references within the dialog
         TextEditingController stageController =
-            TextEditingController(text: values['stage'] ?? '');
+        TextEditingController(text: values['stage'] ?? '');
         TextEditingController siteController =
-            TextEditingController(text: values['site'] ?? '');
+        TextEditingController(text: values['site'] ?? '');
         TextEditingController blockController =
-            TextEditingController(text: values['block'] ?? '');
+        TextEditingController(text: values['block'] ?? '');
         TextEditingController projectController =
-            TextEditingController(text: values['project'] ?? '');
+        TextEditingController(text: values['project'] ?? '');
 
         return AlertDialog(
           title: Column(
@@ -185,7 +287,7 @@ class _BarcodePageState extends State<BarcodePage> {
               Text("Shortcuts"),
               SizedBox(
                   height:
-                      8), // Adds a small space between the title and subtitle
+                  8), // Adds a small space between the title and subtitle
               Text(
                 "Create shortcuts for the barcode creation with comma separation.",
                 style: TextStyle(
@@ -210,15 +312,19 @@ class _BarcodePageState extends State<BarcodePage> {
                 TextField(
                     controller: stageController,
                     decoration: InputDecoration(labelText: "Stage Options")),
+                SizedBox(height: 20),
                 TextField(
                     controller: siteController,
                     decoration: InputDecoration(labelText: "Site Options")),
+                SizedBox(height: 20),
                 TextField(
                     controller: blockController,
                     decoration: InputDecoration(labelText: "Block Options")),
+                SizedBox(height: 20),
                 TextField(
                     controller: projectController,
                     decoration: InputDecoration(labelText: "Project Options")),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -255,7 +361,7 @@ class _BarcodePageState extends State<BarcodePage> {
     final bool showBarcodeWidgets = _barcodeController.text.length != 7;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Barcode Page"),
+        title: Text("Barcode Menu"),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.settings),
@@ -265,222 +371,299 @@ class _BarcodePageState extends State<BarcodePage> {
       ),
       body: SingleChildScrollView(
         child: Center(
-          child: Column(
-            mainAxisAlignment: showBarcodeWidgets
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              SizedBox(height: 20),
-              if (showBarcodeWidgets) ...[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.barcode_reader,
-                        size:
-                            200), // Adjusted to qr_code_scanner for demonstration
-                    SizedBox(width: 10), // Spacing between icon and text
-                    Text(
-                      "Please Scan or Enter a Barcode",
-                      style: TextStyle(fontSize: 40), // Large text
+              Column(
+                mainAxisAlignment: showBarcodeWidgets
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(height: 20),
+                  if (showBarcodeWidgets) ...[
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.barcode_reader,
+                            size:
+                            200),
+                        // Adjusted to qr_code_scanner for demonstration
+                        SizedBox(width: 10),
+                        // Spacing between icon and text
+                        Text(
+                          "Please Scan or Enter a Barcode",
+                          style: TextStyle(fontSize: 40), // Large text
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 20), // Spacing between text and TextField
                   ],
-                ),
-                SizedBox(height: 20), // Spacing between text and TextField
-              ],
-              Container(
-                width: 250, // Fixed width for the barcode text field
-                child: TextField(
-                  controller: _barcodeController,
-                  focusNode: _barcodeFocusNode,
-                  decoration: InputDecoration(
-                    labelText: "Barcode",
-                    border: OutlineInputBorder(),
+                  Container(
+                    width: 250, // Fixed width for the barcode text field
+                    child: TextField(
+                      controller: _barcodeController,
+                      focusNode: _barcodeFocusNode,
+                      decoration: InputDecoration(
+                        labelText: "Barcode",
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly
+                      ], // Optional: Only allow numbers
+                    ),
                   ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly
-                  ], // Optional: Only allow numbers
-                ),
+                  if (!showBarcodeWidgets) ...[
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextField(
+                        controller: _genotypeController,
+                        focusNode: _genotypeFocusNode,
+                        decoration: InputDecoration(
+                          labelText: "Genotype",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Stage",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ), // Stage dropdown
+                        value: _selectedStage,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedStage = newValue;
+                          });
+                        },
+                        items: _stageOptions
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Site",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedSite,
+                        items: _siteOptions
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedSite = value;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Block",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedBlock,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedBlock = newValue;
+                          });
+                        },
+                        items: _blockOptions
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Project",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedProject,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedProject = newValue;
+                          });
+                        },
+                        items: _projectOptions
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Post Harvest",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedPostHarvest,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedPostHarvest = newValue;
+                          });
+                        },
+                        items: <String>['T1', 'T2']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration( // Use InputDecoration for labelText
+                          labelText: "Bush",
+                          // Correct placement of labelText
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _bush,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _bush = newValue;
+                          });
+                        },
+                        items: <String>['1', '2']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextField(
+                        controller: _notesController,
+                        decoration: InputDecoration(
+                          labelText: "Notes",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextField(
+                        controller: _massController,
+                        decoration: InputDecoration(
+                          labelText: "Mass",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.numberWithOptions(
+                            decimal: true), // Enable decimal input
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(
+                              r'^\d*\.?\d*')), // Allow digits and decimal point
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextField(
+                        controller: _numOfBerriesController,
+                        decoration: InputDecoration(
+                          labelText: "Number of Berries",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextField(
+                        controller: _xBerryMassController,
+                        decoration: InputDecoration(
+                          labelText: "xBerry Mass",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.numberWithOptions(
+                            decimal: true), // Enable decimal input
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(
+                              r'^\d*\.?\d*')), // Allow digits and decimal point
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 0.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // Use min to fit the content of the column
+                        mainAxisAlignment: MainAxisAlignment.center, // Center the button vertically
+                        children: [
+                          SizedBox(height:20),
+                          ElevatedButton(
+                            onPressed: _updateDatabaseEntry,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green, // Set the background color to green.
+                              padding: EdgeInsets.symmetric(horizontal: 70, vertical: 30), // Make the button extra large
+                              textStyle: TextStyle(
+                                fontSize: 20, // Increase font size for the text
+                                color: Colors.white, // This will be overridden by the Text widget color
+                              ),
+                            ),
+                            child: Text(
+                              'Save Code',
+                              style: TextStyle(
+                                color: Colors.white, // Ensure text color is white
+                                fontSize: 30, // Optional, if you want to explicitly set the text size again
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 40),
+                  ],
+                ],
               ),
-              if (!showBarcodeWidgets) ...[
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: TextField(
-                    controller: _genotypeController,
-                    decoration: InputDecoration(
-                      labelText: "Genotype",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration( // Use InputDecoration for labelText
-                      labelText: "Select Stage", // Correct placement of labelText
-                      border: OutlineInputBorder(),
-                    ),// Stage dropdown
-                    value: _selectedStage,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedStage = newValue;
-                      });
-                    },
-                    items: _stageOptions
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration( // Use InputDecoration for labelText
-                      labelText: "Select Site", // Correct placement of labelText
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedSite,
-                    items: _siteOptions
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedSite = value;
-                      });
-                    },
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration( // Use InputDecoration for labelText
-                      labelText: "Select Block", // Correct placement of labelText
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedBlock,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedBlock = newValue;
-                      });
-                    },
-                    items: _blockOptions
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration( // Use InputDecoration for labelText
-                      labelText: "Select Project", // Correct placement of labelText
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedProject,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedProject = newValue;
-                      });
-                    },
-                    items: _projectOptions
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration( // Use InputDecoration for labelText
-                      labelText: "Select Post Harvest", // Correct placement of labelText
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedPostHarvest,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedPostHarvest = newValue;
-                      });
-                    },
-                    items: <String>['T1', 'T2']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: TextField(
-                    controller: _notesController,
-                    decoration: InputDecoration(
-                      labelText: "Notes",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: TextField(
-                    controller: _massController,
-                    decoration: InputDecoration(
-                      labelText: "Mass",
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: TextField(
-                    controller: _numOfBerriesController,
-                    decoration: InputDecoration(
-                      labelText: "Number of Berries",
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: 250,
-                  child: TextField(
-                    controller: _xBerryMassController,
-                    decoration: InputDecoration(
-                      labelText: "xBerry Mass",
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                ),
-              ],
             ],
           ),
         ),

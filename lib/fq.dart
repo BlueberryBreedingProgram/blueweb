@@ -77,7 +77,7 @@ class _FruitQualityState extends State<FruitQuality> {
         'block',
         'stage',
         'project',
-        'box',
+        'postHarvest',
         'bush',
         'notes',
         'mass',
@@ -109,7 +109,7 @@ class _FruitQualityState extends State<FruitQuality> {
         row.add(fruitQualityMap['block']);
         row.add(fruitQualityMap['stage']);
         row.add(fruitQualityMap['project']);
-        row.add(fruitQualityMap['box']);
+        row.add(fruitQualityMap['postHarvest']);
         row.add(fruitQualityMap['bush']);
         row.add(fruitQualityMap['notes']);
         row.add(fruitQualityMap['mass']);
@@ -168,7 +168,7 @@ class _FruitQualityState extends State<FruitQuality> {
         'block',
         'stage',
         'project',
-        'box',
+        'postHarvest',
         'bush',
         'notes',
         'mass',
@@ -201,7 +201,7 @@ class _FruitQualityState extends State<FruitQuality> {
         row.add(fruitQualityMap['block']);
         row.add(fruitQualityMap['stage']);
         row.add(fruitQualityMap['project']);
-        row.add(convertToNumber(fruitQualityMap['box']));
+        row.add(convertToNumber(fruitQualityMap['postHarvest']));
         row.add(convertToNumber(fruitQualityMap['bush']));
         row.add(fruitQualityMap['notes']);
         row.add(convertToNumber(fruitQualityMap['mass']));
@@ -241,7 +241,7 @@ class _FruitQualityState extends State<FruitQuality> {
       'block',
       'stage',
       'project',
-      'box',
+      'postHarvest',
       'bush',
       'notes',
       'mass',
@@ -564,7 +564,6 @@ class _FruitQualityState extends State<FruitQuality> {
                                 .toList(),
                           ),
                         ),
-
                       ],
                     );
                   }
