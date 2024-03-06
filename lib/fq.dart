@@ -20,6 +20,8 @@ class _FruitQualityState extends State<FruitQuality> {
   final TextEditingController _searchController = TextEditingController();
   String? selectedGroupingAttribute;
   Map<String, List<Map<String, dynamic>>> groupedData = {};
+  final ScrollController _verticalScrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
 
   @override
   void initState() {
@@ -30,6 +32,13 @@ class _FruitQualityState extends State<FruitQuality> {
     setState(() {
       fetchData(); 
     });
+  }
+
+  @override
+  void dispose() {
+    _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
+    super.dispose();
   }
 
   Future<List<Map<String, dynamic>>> fetchData() async {
@@ -397,7 +406,18 @@ class _FruitQualityState extends State<FruitQuality> {
                             ),
                           ],
                         ),
-                        SingleChildScrollView(
+                        Expanded(
+                        child: Scrollbar(
+                          controller: _verticalScrollController,
+                          thumbVisibility: true,// Scrollbar for vertical scrolling
+                        child: SingleChildScrollView(
+                          controller: _verticalScrollController,
+                          scrollDirection: Axis.vertical,
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          controller: _horizontalScrollController,
+                        child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
                             showCheckboxColumn: false,
@@ -563,6 +583,10 @@ class _FruitQualityState extends State<FruitQuality> {
                             })
                                 .toList(),
                           ),
+                        ),
+                        ),
+                  ),
+                  ),
                         ),
                       ],
                     );

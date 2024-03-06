@@ -99,17 +99,20 @@ class _RangePageState extends State<RangePage> {
       body: ListView(
         padding: EdgeInsets.all(16.0),
         children: <Widget>[
-          
-          ...(_createControllers().entries.map((entry) => FractionallySizedBox(
-            widthFactor: 0.5,
-            child: TextField(
-              controller: entry.value,
-              decoration: InputDecoration(
-                labelText: entry.key,
+          ..._createControllers().entries.map((entry) =>
+              FractionallySizedBox(
+                widthFactor: 0.5,
+                child: TextField(
+                  controller: entry.value,
+                  decoration: InputDecoration(
+                    labelText: entry.key,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
               ),
-              keyboardType: TextInputType.number,
-            ),
-          ))),
+          )
+              .expand((widget) => [widget, SizedBox(height: 20)]) // Insert a SizedBox of height 20 between each TextField
+              .toList()..removeLast(),
           Padding(
             padding: EdgeInsets.only(top: 16.0),  
             child: FractionallySizedBox(
